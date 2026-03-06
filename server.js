@@ -12,7 +12,19 @@ const port = process.env.PORT || 8080;
 
 app.use(cors());
 app.use(express.json());
-
+app.get('/debug/db', (req, res) => {
+    const db = require('./db');
+    try {
+        const sessions = db.prepare('SELECT * FROM sessions ORDER BY timestamp DESC LIMIT 50').all();
+        const cache = db.prepare('SELECT * FROM guides_cache LIMIT 50').all();
+        res.json({
+            sessions,
+            guides_cache: cache
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 // TOTAL PUBLIC DEBUG ENDPOINT (No password needed)
 app.get('/debug', (req, res) => {
     res.json({
