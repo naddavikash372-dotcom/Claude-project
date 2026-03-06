@@ -1,5 +1,10 @@
-node_modules
+node_modules/
 .env
 database.sqlite
-package-lock.json
+check_db.js
+test_insert.js
+test_http.js
+test_guide.js
+debug_ai.js
+.DS_Store
 *.log
