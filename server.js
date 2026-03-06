@@ -13,6 +13,19 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// TOTAL PUBLIC DEBUG ENDPOINT (No password needed)
+app.get('/debug', (req, res) => {
+    res.json({
+        message: "If you see this, the server is updated!",
+        time: new Date().toISOString(),
+        ACCESS_PASSWORD: process.env.ACCESS_PASSWORD || 'NOT_SET',
+        ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY ? 'EXISTS' : 'NOT_SET',
+        NODE_ENV: process.env.NODE_ENV || 'NOT_SET',
+        PORT: process.env.PORT || 'NOT_SET',
+        env_keys_count: Object.keys(process.env).length
+    });
+});
+
 // Apply access gate to all /api routes
 app.use('/api', accessGate);
 
