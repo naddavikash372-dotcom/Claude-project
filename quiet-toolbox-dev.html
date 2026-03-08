@@ -1,0 +1,2278 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Quiet Toolbox</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0a0c0b;
+      --surface: #0f120f;
+      --card: #131613;
+      --border: #1c201c;
+      --accent: #b8ff57;
+      --accent-dim: #6e9e2e;
+      --accent-glow: rgba(184, 255, 87, 0.07);
+      --accent-glow-strong: rgba(184, 255, 87, 0.13);
+      --text: #dae6db;
+      --text-dim: #8a9a8b;
+      --muted: #3a453b;
+      --warn: #ffc557;
+      --warn-bg: rgba(255, 197, 87, 0.07);
+      --warn-border: rgba(255, 197, 87, 0.2);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Grid texture */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(184, 255, 87, 0.014) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(184, 255, 87, 0.014) 1px, transparent 1px);
+      background-size: 44px 44px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── HEADER ── */
+    header {
+      position: relative;
+      z-index: 10;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      height: 56px;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 15px;
+      letter-spacing: -0.3px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .brand:hover .brand-icon {
+      transform: rotate(-8deg);
+    }
+
+    .brand-icon {
+      width: 28px;
+      height: 28px;
+      background: var(--accent);
+      border-radius: 7px;
+      display: grid;
+      place-items: center;
+      font-size: 15px;
+      color: var(--bg);
+      transition: transform 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .brand span {
+      color: var(--accent);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .voice-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      padding: 5px 12px;
+      border-radius: 100px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .voice-btn:hover {
+      border-color: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    .voice-btn.active {
+      border-color: var(--accent-dim);
+      color: var(--accent);
+      background: var(--accent-glow);
+    }
+
+    .voice-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: background 0.2s;
+    }
+
+    .voice-btn.active .voice-dot {
+      background: var(--accent);
+    }
+
+    /* ── MAIN ── */
+    main {
+      flex: 1;
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-y: auto;
+    }
+
+    /* ── SCREENS ── */
+    .screen {
+      display: none;
+      width: 100%;
+      max-width: 680px;
+      padding: 60px 24px 80px;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      animation: fadeUp 0.35s ease both;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    /* ── AUTH SCREEN ── */
+    .auth-card {
+      width: 100%;
+      max-width: 400px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 36px 32px;
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    .auth-error {
+      color: var(--warn);
+      font-size: 13px;
+      padding: 12px;
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-border);
+      border-radius: 10px;
+      display: none;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(16px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ── INPUT SCREEN ── */
+    .input-label {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 24px;
+      opacity: 0.8;
+      align-self: flex-start;
+    }
+
+    .input-heading {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(26px, 5vw, 38px);
+      letter-spacing: -1px;
+      line-height: 1.15;
+      color: var(--text);
+      align-self: flex-start;
+      margin-bottom: 10px;
+    }
+
+    .input-sub {
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.6;
+      align-self: flex-start;
+      margin-bottom: 32px;
+    }
+
+    .input-field {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 22px;
+      font-family: 'DM Mono', monospace;
+      font-size: 15px;
+      color: var(--text);
+      resize: none;
+      outline: none;
+      line-height: 1.6;
+      min-height: 100px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      margin-bottom: 6px;
+    }
+
+    .input-field::placeholder {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .input-field:focus {
+      border-color: var(--accent-dim);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .input-hint {
+      font-size: 11px;
+      color: var(--muted);
+      align-self: flex-start;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .go-btn {
+      align-self: flex-start;
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: -0.2px;
+      padding: 14px 32px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .go-btn.ready {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .go-btn.ready:hover {
+      filter: brightness(1.08);
+    }
+
+    .go-btn.ready:active {
+      transform: scale(0.98);
+    }
+
+    .go-btn.loading {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .back-link {
+      align-self: flex-start;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 0;
+      margin-top: 20px;
+      transition: color 0.15s;
+    }
+
+    .back-link:hover {
+      color: var(--text);
+    }
+
+    /* ── GUIDE SCREEN ── */
+    .guide-meta {
+      align-self: flex-start;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .guide-tag {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent-dim);
+      padding: 4px 10px;
+      border-radius: 100px;
+      background: var(--accent-glow);
+    }
+
+    .guide-item-name {
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    /* Step card */
+    .step-card {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 32px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .step-number {
+      font-size: 10px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--accent-dim);
+      margin-bottom: 14px;
+    }
+
+    .step-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 22px;
+      letter-spacing: -0.4px;
+      color: var(--text);
+      line-height: 1.25;
+      margin-bottom: 18px;
+    }
+
+    .step-body {
+      font-size: 14px;
+      color: var(--text-dim);
+      line-height: 1.8;
+    }
+
+    .step-body p {
+      margin-bottom: 14px;
+    }
+
+    .step-body p:last-child {
+      margin-bottom: 0;
+    }
+
+    .step-body strong {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .step-body em {
+      color: var(--accent);
+      font-style: normal;
+    }
+
+    /* Alert inside step */
+    .step-alert {
+      margin-top: 20px;
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .step-alert-icon {
+      color: var(--warn);
+      font-size: 14px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .step-alert-text {
+      font-size: 12px;
+      color: var(--warn);
+      line-height: 1.6;
+    }
+
+    /* Nav area */
+    .step-nav {
+      width: 100%;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 13px 26px;
+      border-radius: 11px;
+      cursor: pointer;
+      transition: all 0.18s;
+      flex-shrink: 0;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.08);
+    }
+
+    .btn-primary:active {
+      transform: scale(0.97);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      padding: 12px 20px;
+      border-radius: 11px;
+      cursor: pointer;
+      transition: all 0.18s;
+      flex-shrink: 0;
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    /* Progress bar */
+    .progress-bar-wrap {
+      width: 100%;
+      height: 2px;
+      background: var(--border);
+      border-radius: 2px;
+      margin-bottom: 32px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
+    /* ── CHAT SCREEN ── */
+    .chat-wrap {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .chat-messages {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 24px;
+      min-height: 120px;
+    }
+
+    .chat-bubble-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      animation: fadeUp 0.3s ease both;
+    }
+
+    .chat-bubble-wrap.user {
+      align-items: flex-end;
+    }
+
+    .chat-label {
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0 4px;
+    }
+
+    .chat-bubble {
+      max-width: 88%;
+      padding: 14px 18px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .chat-bubble.assistant {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      border-bottom-left-radius: 4px;
+    }
+
+    .chat-bubble.user {
+      background: var(--accent-glow);
+      border: 1px solid var(--accent-dim);
+      color: var(--text);
+      border-bottom-right-radius: 4px;
+      text-align: right;
+    }
+
+    .chat-typing {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 14px 18px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      border-bottom-left-radius: 4px;
+      width: fit-content;
+      animation: fadeUp 0.3s ease both;
+    }
+
+    .inline-dots {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      vertical-align: middle;
+      margin-left: 2px;
+    }
+
+    .inline-dots span {
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent-dim);
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    .inline-dots span:nth-child(2) {
+      animation-delay: 0.18s;
+    }
+
+    .inline-dots span:nth-child(3) {
+      animation-delay: 0.36s;
+    }
+
+    .chat-typing span {
+      width: 6px;
+      height: 6px;
+      background: var(--accent-dim);
+      border-radius: 50%;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    .chat-typing span:nth-child(2) {
+      animation-delay: 0.18s;
+    }
+
+    .chat-typing span:nth-child(3) {
+      animation-delay: 0.36s;
+    }
+
+    .chat-input-row {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .chat-input {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 13px 16px;
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      color: var(--text);
+      outline: none;
+      resize: none;
+      line-height: 1.5;
+      min-height: 48px;
+      max-height: 120px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .chat-input::placeholder {
+      color: var(--muted);
+    }
+
+    .chat-input:focus {
+      border-color: var(--accent-dim);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .chat-send {
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 11px;
+      cursor: pointer;
+      font-size: 18px;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      transition: all 0.15s;
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .chat-send.ready {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .chat-send.ready:hover {
+      filter: brightness(1.1);
+    }
+
+    .chat-send:active {
+      transform: scale(0.95);
+    }
+
+    /* Loading state */
+    .thinking-card {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 48px 32px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .thinking-dots {
+      display: flex;
+      gap: 8px;
+    }
+
+    .thinking-dots span {
+      width: 7px;
+      height: 7px;
+      background: var(--accent-dim);
+      border-radius: 50%;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    .thinking-dots span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .thinking-dots span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      80%,
+      100% {
+        opacity: 0.2;
+        transform: scale(0.8);
+      }
+
+      40% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .thinking-text {
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+    }
+
+    /* Completion card */
+    .completion-card {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid #2a3d1a;
+      border-radius: 18px;
+      padding: 40px 32px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .completion-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(184, 255, 87, 0.05) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .completion-icon {
+      font-size: 36px;
+      margin-bottom: 16px;
+    }
+
+    .completion-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 28px;
+      letter-spacing: -0.5px;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .completion-text {
+      font-size: 14px;
+      color: var(--text-dim);
+      line-height: 1.7;
+      max-width: 380px;
+      margin: 0 auto 28px;
+    }
+
+    /* ── CONFIRM SCREEN ── */
+    .confirm-card {
+      width: 100%;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 36px 32px;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .confirm-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(184, 255, 87, 0.04) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .confirm-eyebrow {
+      font-size: 10px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--accent-dim);
+      margin-bottom: 16px;
+    }
+
+    .confirm-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(20px, 4vw, 26px);
+      letter-spacing: -0.5px;
+      color: var(--text);
+      line-height: 1.2;
+      margin-bottom: 16px;
+    }
+
+    .confirm-description {
+      font-size: 14px;
+      color: var(--text-dim);
+      line-height: 1.75;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+      margin-top: 4px;
+    }
+
+    .confirm-actions {
+      width: 100%;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .confirm-no {
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      padding: 12px 22px;
+      border-radius: 11px;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+
+    .confirm-no:hover {
+      border-color: var(--muted);
+      color: var(--text);
+    }
+
+    /* ── STUCK BUTTON ── */
+    .stuck-btn {
+      position: fixed;
+      bottom: 28px;
+      right: 24px;
+      z-index: 100;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.3px;
+      padding: 10px 18px;
+      border-radius: 100px;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      display: none;
+    }
+
+    .stuck-btn:hover {
+      border-color: var(--warn-border);
+      color: var(--warn);
+      background: var(--warn-bg);
+    }
+
+    .stuck-btn.visible {
+      display: block;
+    }
+
+    /* ── STUCK MODAL ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 0 0 0 0;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .modal-sheet {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-bottom: none;
+      border-radius: 20px 20px 0 0;
+      padding: 32px 28px 40px;
+      width: 100%;
+      max-width: 640px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      animation: slideUp 0.25s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(40px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .modal-header {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 20px;
+      letter-spacing: -0.3px;
+      color: var(--text);
+    }
+
+    .modal-sub {
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.6;
+      margin-top: -6px;
+    }
+
+    .modal-textarea {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      color: var(--text);
+      resize: none;
+      outline: none;
+      line-height: 1.6;
+      min-height: 90px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .modal-textarea::placeholder {
+      color: var(--muted);
+    }
+
+    .modal-textarea:focus {
+      border-color: var(--accent-dim);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .modal-cancel {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      padding: 10px 18px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .modal-cancel:hover {
+      border-color: var(--muted);
+      color: var(--text);
+    }
+
+    .modal-submit {
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 10px 22px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .modal-submit:disabled {
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .modal-submit:not(:disabled):hover {
+      filter: brightness(1.08);
+    }
+
+    .ai-response-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      font-size: 14px;
+      color: var(--text-dim);
+      line-height: 1.75;
+    }
+
+    .ai-response-label {
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent-dim);
+      margin-bottom: 10px;
+    }
+
+    /* ── COMPLETION CHAT ── */
+    .completion-chat {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .completion-messages {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .completion-input-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    /* ── PAIN POINT ── */
+    .pain-point-card {
+      margin-top: 20px;
+      background: rgba(184, 255, 87, 0.05);
+      border: 1px solid rgba(184, 255, 87, 0.2);
+      border-radius: 12px;
+      padding: 18px 20px;
+    }
+
+    .pain-point-eyebrow {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      opacity: 0.8;
+      margin-bottom: 8px;
+    }
+
+    .pain-point-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    .pain-point-body {
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.7;
+      margin-bottom: 10px;
+    }
+
+    .pain-point-when {
+      font-size: 11px;
+      color: var(--accent-dim);
+      letter-spacing: 0.3px;
+    }
+
+    .pain-point-reminder {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: rgba(184, 255, 87, 0.04);
+      border-left: 2px solid var(--accent-dim);
+      border-radius: 0 8px 8px 0;
+      font-size: 13px;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    .pain-point-reminder-label {
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+
+    #modalRoot {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      pointer-events: none;
+    }
+
+    #modalRoot:not(:empty) {
+      pointer-events: auto;
+    }
+
+    /* ── STUCK CHAT MODAL ── */
+    .modal-sheet--chat {
+      display: flex;
+      flex-direction: column;
+      height: 70vh;
+      max-height: 560px;
+      padding: 0 !important;
+      gap: 0 !important;
+      overflow: hidden;
+    }
+
+    .modal-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 22px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .modal-header-row .modal-header {
+      margin: 0;
+    }
+
+    .modal-close-btn {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-size: 14px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: color 0.15s;
+    }
+
+    .modal-close-btn:hover {
+      color: var(--text);
+    }
+
+    .stuck-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .stuck-bubble-wrap {
+      display: flex;
+    }
+
+    .stuck-bubble-wrap.user {
+      justify-content: flex-end;
+    }
+
+    .stuck-bubble-wrap.assistant {
+      justify-content: flex-start;
+    }
+
+    .stuck-bubble {
+      max-width: 82%;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .stuck-bubble.user {
+      background: var(--accent);
+      color: var(--bg);
+      border-radius: 14px 14px 4px 14px;
+    }
+
+    .stuck-bubble.assistant {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      border-radius: 14px 14px 14px 4px;
+      overflow-x: auto;
+    }
+
+    .stuck-bubble.assistant table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+      font-size: 11px;
+    }
+
+    .stuck-bubble.assistant th,
+    .stuck-bubble.assistant td {
+      border: 1px solid var(--border);
+      padding: 6px 8px;
+      text-align: left;
+    }
+
+    .stuck-bubble.assistant th {
+      background: var(--surface);
+      color: var(--accent);
+    }
+
+    .stuck-input-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 10px 16px 14px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .stuck-input-row-inner {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    .stuck-back-btn {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      padding: 0;
+      text-align: left;
+      transition: color 0.15s;
+      align-self: flex-start;
+    }
+
+    .stuck-back-btn:hover {
+      color: var(--accent);
+    }
+
+    .stuck-input {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--text);
+      resize: none;
+      outline: none;
+      line-height: 1.5;
+      max-height: 100px;
+      overflow-y: auto;
+      transition: border-color 0.2s;
+    }
+
+    .stuck-input:focus {
+      border-color: var(--accent-dim);
+    }
+
+    .stuck-input::placeholder {
+      color: var(--muted);
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="brand" onclick="App.goHome()">
+      <div class="brand-icon">🔧</div>
+      The <span>Quiet</span> Toolbox
+    </div>
+    <div class="header-right">
+      <button class="voice-btn" id="voiceBtn" onclick="Voice.toggle()">
+        <span class="voice-dot" id="voiceDot"></span>
+        <span id="voiceLabel">Voice off</span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- SCREEN 0: AUTH -->
+    <div class="screen active" id="screenAuth">
+      <div class="input-label">Security</div>
+      <h2 class="input-heading">Access code<br>required.</h2>
+      <p class="input-sub">Enter your password to unlock the toolbox.</p>
+
+      <div class="auth-card">
+        <input type="password" class="input-field" id="authPassword" placeholder="••••••••" style="margin-bottom:0;"
+          onkeydown="if(event.key==='Enter'){App.verifyPassword();}">
+        <div class="auth-error" id="authError">Incorrect password. Please try again.</div>
+        <button class="go-btn ready" id="authBtn" onclick="App.verifyPassword()" style="align-self:stretch;">Unlock
+          Toolbox →</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 1: INPUT -->
+    <div class="screen" id="screenInput">
+      <div class="input-label">Let's get started</div>
+      <h2 class="input-heading">What are we<br>working on today?</h2>
+      <p class="input-sub">Model number, brand, or just describe it. Whatever you've got.</p>
+
+      <textarea class="input-field" id="userInput" placeholder="Type a product name, model number, or description…"
+        oninput="App.onInputChange()"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey&&App.inputReady){event.preventDefault();App.startGuide();}"></textarea>
+      <p class="input-hint">Press Enter to continue, or click below.</p>
+      <p class="input-hint" id="inputRetryHint"
+        style="display:none; color: var(--warn); border: 1px solid var(--warn-border); background: var(--warn-bg); padding: 10px 14px; border-radius: 8px; margin-bottom: 8px;">
+        No problem — try adding the model number, brand name, or describe what it looks like and we'll get it right.</p>
+
+      <button class="go-btn" id="goBtn" onclick="App.startGuide()">Let's go →</button>
+    </div>
+
+    <!-- SCREEN 3: WAITING (while identifying) -->
+    <div class="screen" id="screenChat">
+      <div class="input-label" id="chatLabel">Just a moment</div>
+      <div class="chat-wrap">
+        <div class="chat-messages" id="chatMessages"></div>
+      </div>
+      <button class="back-link" onclick="App.showInput()" style="margin-top:24px;">← Start over</button>
+    </div>
+
+    <!-- SCREEN 4: CONFIRM -->
+    <div class="screen" id="screenConfirm">
+      <div class="input-label" id="confirmLabel">Just to confirm</div>
+      <h2 class="input-heading" style="margin-bottom:28px;" id="confirmHeading">Is this what<br>you have?</h2>
+      <div class="confirm-card" id="confirmCard">
+        <div class="confirm-eyebrow">We think you're working on</div>
+        <div class="confirm-name" id="confirmName"></div>
+        <div class="confirm-description" id="confirmDescription"></div>
+      </div>
+      <div class="confirm-actions" id="confirmActions">
+        <button class="btn-primary" onclick="App.confirmYes()">Yes, that's it →</button>
+        <button class="confirm-no" onclick="App.confirmNo()">No, that's not right</button>
+      </div>
+
+      <!-- Refinement state — shown when user says no -->
+      <div id="confirmRefine" style="display:none; width:100%;">
+        <div class="confirm-card" style="margin-bottom:20px;">
+          <div class="confirm-eyebrow">Quick question</div>
+          <div id="clarifyQuestion" style="font-size:15px; color:var(--text); line-height:1.6; margin-top:8px;"></div>
+        </div>
+        <div class="chat-input-row">
+          <textarea class="chat-input" id="clarifyInput" rows="1" placeholder="Your answer…"
+            oninput="App.onClarifyType()"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();App.clarifySubmit();}"></textarea>
+          <button class="chat-send" id="clarifySend" onclick="App.clarifySubmit()">↑</button>
+        </div>
+      </div>
+
+      <button class="back-link" onclick="App.showInput()" style="margin-top:20px;">← Start over</button>
+    </div>
+
+    <!-- SCREEN 4: GUIDE -->
+    <div class="screen" id="screenGuide">
+      <div class="guide-meta">
+        <span class="guide-tag" id="guideTag">Loading</span>
+        <span class="guide-item-name" id="guideItemName"></span>
+      </div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+      </div>
+      <div id="stepContent" style="width:100%"></div>
+      <div class="step-nav" id="stepNav"></div>
+      <button class="back-link" onclick="App.showInput()" style="margin-top:8px;">← Start over</button>
+    </div>
+
+  </main>
+
+  <!-- Hey Toolbox button -->
+  <button class="stuck-btn" id="stuckBtn" onclick="Stuck.open()">Hey Toolbox</button>
+
+  <!-- Modal root -->
+  <div id="modalRoot"></div>
+
+  <script>
+    // ═══════════════════════════════════════════════════════════════
+    // VOICE
+    // ═══════════════════════════════════════════════════════════════
+    const Voice = {
+      active: false,
+      synth: window.speechSynthesis,
+      toggle() {
+        this.active = !this.active;
+        document.getElementById('voiceBtn').classList.toggle('active', this.active);
+        document.getElementById('voiceDot').style.background = this.active ? 'var(--accent)' : '';
+        document.getElementById('voiceLabel').textContent = this.active ? 'Voice on' : 'Voice off';
+        if (!this.active) this.synth.cancel();
+      },
+      speak(text) {
+        if (!this.active) return;
+        this.synth.cancel();
+        const plain = text.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+        const utt = new SpeechSynthesisUtterance(plain);
+        utt.rate = 0.92;
+        utt.pitch = 1;
+        this.synth.speak(utt);
+      }
+    };
+
+    // ═══════════════════════════════════════════════════════════════
+    // CLAUDE API
+    // ═══════════════════════════════════════════════════════════════
+    async function callClaude(messages, systemPromptKey, maxTokens = 1000, context = null) {
+      const resp = await fetch('/api/claude', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          password: App.password,
+          systemPromptKey,
+          context,
+          messages,
+          maxTokens
+        })
+      });
+
+      const data = await resp.json();
+      if (data.error) {
+        console.error('API error:', data.error);
+        throw new Error(data.error);
+      }
+
+      // The server returns { result: { content: [ { text: "..." } ] } }
+      return data.result?.content?.[0]?.text?.trim() || '';
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // SYSTEM PROMPTS
+    // ═══════════════════════════════════════════════════════════════
+    const SYSTEM_IDENTIFY = 'SYSTEM_IDENTIFY';
+    const SYSTEM_STEP = 'SYSTEM_STEP';
+    const SYSTEM_CLARIFY = 'SYSTEM_CLARIFY';
+    const SYSTEM_REIDENTIFY = 'SYSTEM_REIDENTIFY';
+    const SYSTEM_CHAT = 'SYSTEM_CHAT';
+    const SYSTEM_CHAT_REPLY = 'SYSTEM_CHAT_REPLY';
+    const SYSTEM_STUCK = 'SYSTEM_STUCK';
+
+
+    // ═══════════════════════════════════════════════════════════════
+    // CHAT (pre-guide conversation while identifying)
+    // ═══════════════════════════════════════════════════════════════
+    const Chat = {
+      identifyResult: null,
+      exchangeCount: 0,
+      _sessionId: 0,
+
+      async start(query) {
+        const sessionId = ++this._sessionId;
+        this._pendingResult = null;
+
+        App.showScreen('screenChat');
+        document.getElementById('chatLabel').textContent = 'Just a moment';
+        document.getElementById('chatMessages').innerHTML = '';
+
+        // Show typing dots while identifying
+        this.showTyping();
+
+        const result = await this._identify(query);
+
+        if (this._sessionId !== sessionId) return; // Stale — user went back
+
+        this.hideTyping();
+        this._pendingResult = result;
+        App.handleIdentifyResult(result);
+      },
+
+      _showReadyButton() {
+        const row = document.getElementById('chatInputRow');
+        if (!row) return;
+        row.style.display = 'flex';
+        row.innerHTML = `
+      <button class="btn-primary" style="width:100%; margin-top:8px;" onclick="Chat.proceed()">Your guide is ready →</button>
+    `;
+      },
+
+      async _identify(query) {
+        try {
+          const raw = await callClaude(
+            [{ role: 'user', content: `I'm assembling or installing: ${query}` }],
+            SYSTEM_IDENTIFY,
+            4000
+          );
+          // Try to extract JSON
+          const start = raw.indexOf('{');
+          const end = raw.lastIndexOf('}');
+          if (start !== -1 && end !== -1 && start < end) {
+            try {
+              const obj = JSON.parse(raw.slice(start, end + 1));
+              if (obj && typeof obj === 'object') return obj;
+            } catch (e) {
+              // Not valid JSON inside {}
+            }
+          }
+          // If no JSON detected or parsing failed, return as text
+          return raw;
+        } catch (e) {
+          return null;
+        }
+      },
+
+      onType() {
+        const val = document.getElementById('chatInput').value.trim();
+        document.getElementById('chatSend').classList.toggle('ready', val.length > 0);
+      },
+
+      async send() {
+        const input = document.getElementById('chatInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        input.value = '';
+        this._chatDone = true;  // User is engaging — suppress auto-button
+        document.getElementById('chatSend').classList.remove('ready');
+        document.getElementById('chatInputRow').style.display = 'none';
+        this.addBubble('user', text);
+        this.exchangeCount++;
+
+        // Wait for identification if not done
+        this.showTyping();
+        const result = await this._identifyPromise;
+
+        // Warm closing reply
+        try {
+          const reply = await callClaude(
+            [{ role: 'user', content: text }],
+            SYSTEM_CHAT_REPLY
+          );
+          this.hideTyping();
+          this.addBubble('assistant', reply);
+          Voice.speak(reply);
+        } catch {
+          this.hideTyping();
+          this.addBubble('assistant', "Sounds good — your guide is ready whenever you are.");
+        }
+
+        // Show a button instead of auto-transitioning — let them read first
+        this._pendingResult = result;
+        const row = document.getElementById('chatInputRow');
+        row.innerHTML = `
+      <button class="btn-primary" style="width:100%; margin-top:8px;" onclick="Chat.proceed()">See my guide →</button>
+    `;
+        row.style.display = 'flex';
+      },
+
+      proceed() {
+        if (!this._pendingResult) {
+          // Identification failed — try again quietly
+          const row = document.getElementById('chatInputRow');
+          row.innerHTML = `
+        <button class="btn-primary" style="width:100%; margin-top:8px; opacity:0.6;" disabled>Trying again…</button>
+      `;
+          this._identifyPromise = this._identify(App.userQuery);
+          this._identifyPromise.then(result => {
+            this._pendingResult = result;
+            row.innerHTML = `
+          <button class="btn-primary" style="width:100%; margin-top:8px;" onclick="Chat.proceed()">See my guide →</button>
+        `;
+          });
+          return;
+        }
+        App.handleIdentifyResult(this._pendingResult);
+      },
+
+      addBubble(role, text) {
+        const wrap = document.createElement('div');
+        wrap.className = `chat-bubble-wrap ${role}`;
+        const label = role === 'assistant' ? 'Quiet Toolbox' : 'You';
+        wrap.innerHTML = `
+      <div class="chat-label">${label}</div>
+      <div class="chat-bubble ${role}">${text}</div>`;
+        document.getElementById('chatMessages').appendChild(wrap);
+        wrap.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      },
+
+      showTyping() {
+        const el = document.createElement('div');
+        el.className = 'chat-bubble-wrap assistant';
+        el.id = 'chatTyping';
+        el.innerHTML = `
+      <div class="chat-label">Quiet Toolbox</div>
+      <div class="chat-typing"><span></span><span></span><span></span></div>`;
+        document.getElementById('chatMessages').appendChild(el);
+        el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      },
+
+      hideTyping() {
+        document.getElementById('chatTyping')?.remove();
+      }
+    };
+
+    // ═══════════════════════════════════════════════════════════════
+    // APP STATE
+    // ═══════════════════════════════════════════════════════════════
+    const App = {
+      password: '',
+      inputReady: false,
+      guide: null,       // { name, category, steps, closing }
+      currentStep: 0,
+      userQuery: '',
+
+      async verifyPassword() {
+        const pwd = document.getElementById('authPassword').value;
+        if (!pwd) return;
+
+        const btn = document.getElementById('authBtn');
+        const err = document.getElementById('authError');
+        btn.disabled = true;
+        btn.textContent = 'Verifying…';
+        err.style.display = 'none';
+
+        try {
+          const resp = await fetch('/api/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: pwd })
+          });
+          const data = await resp.json();
+          if (data.success) {
+            this.password = pwd;
+            // Store in cookie for 1 day
+            const d = new Date();
+            d.setTime(d.getTime() + (24 * 60 * 60 * 1000));
+            document.cookie = `qt_password=${pwd};expires=${d.toUTCString()};path=/;SameSite=Strict`;
+
+            this.showScreen('screenInput');
+            setTimeout(() => document.getElementById('userInput').focus(), 400);
+          } else {
+            err.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = 'Unlock Toolbox →';
+          }
+        } catch (e) {
+          err.textContent = 'Connection error. Please try again.';
+          err.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'Unlock Toolbox →';
+        }
+      },
+
+      checkPersistedAuth() {
+        const cookies = document.cookie.split('; ');
+        const pwdCookie = cookies.find(row => row.startsWith('qt_password='));
+        if (pwdCookie) {
+          const saved = pwdCookie.split('=')[1];
+          if (saved) {
+            document.getElementById('authPassword').value = saved;
+            // Auto-verify if we have a persisted password
+            this.verifyPassword();
+          }
+        }
+      },
+
+      goHome() {
+        Voice.synth.cancel();
+        // Reset all state fully — increment session ID to cancel any in-flight Chat calls
+        Chat._sessionId++;
+        Chat._pendingResult = null;
+        Chat._identifyPromise = null;
+        Chat._chatDone = false;
+        Chat.exchangeCount = 0;
+        this.guide = null;
+        this.userQuery = '';
+        Stuck.reset();
+        // Reset confirm screen
+        document.getElementById('confirmCard').style.display = 'block';
+        document.getElementById('confirmActions').style.display = 'flex';
+        document.getElementById('confirmRefine').style.display = 'none';
+        document.getElementById('confirmHeading').innerHTML = 'Is this what<br>you have?';
+        document.getElementById('confirmLabel').textContent = 'Just to confirm';
+        document.getElementById('clarifyInput').value = '';
+        document.getElementById('clarifyInput').disabled = false;
+        document.getElementById('clarifySend').classList.remove('ready');
+        // Reset input
+        document.getElementById('userInput').value = '';
+        document.getElementById('inputRetryHint').style.display = 'none';
+        this.inputReady = false;
+        document.getElementById('goBtn').classList.remove('ready');
+        document.getElementById('stuckBtn').classList.remove('visible');
+        this.showScreen('screenInput');
+        setTimeout(() => document.getElementById('userInput').focus(), 300);
+      },
+
+      showInput() {
+        Voice.synth.cancel();
+        // Reset all state fully — increment session ID to cancel any in-flight Chat calls
+        Chat._sessionId++;
+        Chat._pendingResult = null;
+        Chat._identifyPromise = null;
+        Chat._chatDone = false;
+        Chat.exchangeCount = 0;
+        this.guide = null;
+        this.userQuery = '';
+        // Reset confirm screen to default state
+        document.getElementById('confirmCard').style.display = 'block';
+        document.getElementById('confirmActions').style.display = 'flex';
+        document.getElementById('confirmRefine').style.display = 'none';
+        document.getElementById('confirmHeading').innerHTML = 'Is this what<br>you have?';
+        document.getElementById('confirmLabel').textContent = 'Just to confirm';
+        document.getElementById('clarifyInput').value = '';
+        document.getElementById('clarifyInput').disabled = false;
+        document.getElementById('clarifySend').classList.remove('ready');
+        // Reset input screen
+        document.getElementById('stuckBtn').classList.remove('visible');
+        document.getElementById('inputRetryHint').style.display = 'none';
+        document.getElementById('userInput').value = '';
+        this.inputReady = false;
+        document.getElementById('goBtn').classList.remove('ready');
+        this.showScreen('screenInput');
+        setTimeout(() => document.getElementById('userInput').focus(), 300);
+      },
+
+      showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        const el = document.getElementById(id);
+        el.classList.add('active');
+        el.style.animation = 'none';
+        requestAnimationFrame(() => { el.style.animation = ''; });
+      },
+
+      onInputChange() {
+        const val = document.getElementById('userInput').value.trim();
+        this.inputReady = val.length > 2;
+        const btn = document.getElementById('goBtn');
+        btn.classList.toggle('ready', this.inputReady);
+      },
+
+      fillExample(text) {
+        const field = document.getElementById('userInput');
+        field.value = text;
+        this.onInputChange();
+        field.focus();
+      },
+
+      async startGuide() {
+        const query = document.getElementById('userInput').value.trim();
+        if (!query) return;
+        this.userQuery = query;
+        Chat.start(query);
+      },
+
+      handleIdentifyResult(result) {
+        if (!result) {
+          this.showScreen('screenGuide');
+          document.getElementById('guideTag').textContent = 'Error';
+          document.getElementById('guideItemName').textContent = '';
+          document.getElementById('progressFill').style.width = '0%';
+          document.getElementById('stepNav').innerHTML = '';
+          document.getElementById('stepContent').innerHTML = `
+        <div class="step-card">
+          <div class="step-number">Sorry</div>
+          <div class="step-title">Something went wrong</div>
+          <div class="step-body"><p>Couldn't connect right now. Check your connection and try again.</p></div>
+        </div>`;
+          document.getElementById('stepNav').innerHTML = `
+        <button class="btn-primary" onclick="App.showInput()">← Try again</button>`;
+          return;
+        }
+
+        // If result is text, convert to a single-step guide
+        if (typeof result === 'string') {
+          this.guide = {
+            identified: true,
+            name: this.userQuery,
+            category: "Guide",
+            description: "Information for your project.",
+            steps: [{ title: "Instruction", body: result }],
+            closing: "I hope this information helps you get started."
+          };
+        } else {
+          this.guide = result;
+        }
+
+        if (!this.guide.identified) {
+          this.showScreen('screenGuide');
+          document.getElementById('guideTag').textContent = 'Needs more info';
+          document.getElementById('guideItemName').textContent = '';
+          document.getElementById('progressFill').style.width = '0%';
+          document.getElementById('stepNav').innerHTML = '';
+          document.getElementById('stepContent').innerHTML = `
+        <div class="step-card">
+          <div class="step-number">Hmm</div>
+          <div class="step-title">Let me ask you something</div>
+          <div class="step-body"><p>${this.guide.message}</p></div>
+        </div>`;
+          document.getElementById('stepNav').innerHTML = `
+        <button class="btn-primary" onclick="App.showInput()">Try again →</button>`;
+          return;
+        }
+
+        // Show confirm screen
+        this.currentStep = 0;
+        document.getElementById('confirmName').textContent = this.guide.name;
+        document.getElementById('confirmDescription').textContent = this.guide.description;
+        this.showScreen('screenConfirm');
+      },
+
+      renderStep() {
+        if (!this.guide) return;
+        const steps = this.guide.steps;
+        const i = this.currentStep;
+        const pp = this.guide.pain_point;
+
+        // Progress
+        const pct = steps.length > 1 ? Math.round((i / (steps.length - 1)) * 100) : 0;
+        document.getElementById('progressFill').style.width = pct + '%';
+
+        // Last step?
+        if (i >= steps.length) {
+          this.renderCompletion();
+          return;
+        }
+
+        const step = steps[i];
+        const isLast = i === steps.length - 1;
+        const stepLabel = i === 0 ? 'Before You Start' : `Step ${i} of ${steps.length - 1}`;
+
+        const warningHtml = step.warning ? `
+      <div class="step-alert">
+        <div class="step-alert-icon">⚠</div>
+        <div class="step-alert-text">${step.warning}</div>
+      </div>` : '';
+
+        // Pain point card — full callout on Before You Start, subtle reminder at the step where it hits
+        let painHtml = '';
+        if (pp) {
+          if (i === 0) {
+            painHtml = `
+          <div class="pain-point-card">
+            <div class="pain-point-eyebrow">📍 Heads up — the tricky moment</div>
+            <div class="pain-point-title">${pp.title}</div>
+            <div class="pain-point-body">${pp.what} ${pp.why} ${pp.fix}</div>
+            <div class="pain-point-when">You'll hit this at: ${pp.when}</div>
+          </div>`;
+          } else if (pp.when && pp.when.toLowerCase().includes(`step ${i}`)) {
+            painHtml = `
+          <div class="pain-point-reminder">
+            <span class="pain-point-reminder-label">This is that moment</span> — ${pp.fix}
+          </div>`;
+          }
+        }
+
+        document.getElementById('stepContent').innerHTML = `
+      <div class="step-card">
+        <div class="step-number">${stepLabel}</div>
+        <div class="step-title">${step.title}</div>
+        <div class="step-body">${formatBody(step.body)}</div>
+        ${warningHtml}
+        ${painHtml}
+      </div>`;
+
+        // Nav
+        const prevBtn = i > 0
+          ? `<button class="btn-secondary" onclick="App.prevStep()">← Back</button>`
+          : '';
+
+        const nextLabel = isLast ? 'Finish' : (step.cta || 'Next step →');
+        document.getElementById('stepNav').innerHTML = `
+      ${prevBtn}
+      <button class="btn-primary" onclick="App.nextStep()">${nextLabel}</button>
+    `;
+
+        // Speak
+        const speakText = step.title + '. ' + step.body;
+        Voice.speak(speakText);
+
+        // Scroll to top of guide content
+        document.getElementById('stepContent').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      },
+
+      renderCompletion() {
+        document.getElementById('progressFill').style.width = '100%';
+        document.getElementById('stuckBtn').classList.remove('visible');
+        Voice.speak(this.guide.closing);
+
+        // Seed the completion conversation with the closing message as first bubble
+        Stuck.reset();
+        Stuck.history.push({ role: 'assistant', content: this.guide.closing });
+
+        document.getElementById('stepContent').innerHTML = `
+      <div class="completion-chat">
+        <div class="completion-messages" id="completionMessages">
+          <div class="stuck-bubble-wrap assistant">
+            <div class="stuck-bubble assistant">${formatBody(this.guide.closing)}</div>
+          </div>
+        </div>
+        <div class="completion-input-row">
+          <div class="stuck-input-row-inner">
+            <textarea
+              class="stuck-input"
+              id="completionInput"
+              rows="1"
+              placeholder="say anything…"
+              oninput="App.onCompletionType()"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();App.completionSend();}"></textarea>
+            <button class="chat-send" id="completionSend" onclick="App.completionSend()">↑</button>
+          </div>
+          <button class="stuck-back-btn" onclick="App.showInput()" style="margin-top:10px;">start something new →</button>
+        </div>
+      </div>`;
+
+        document.getElementById('stepNav').innerHTML = '';
+        setTimeout(() => document.getElementById('completionInput')?.focus(), 100);
+      },
+
+      onCompletionType() {
+        const val = document.getElementById('completionInput')?.value.trim();
+        document.getElementById('completionSend')?.classList.toggle('ready', val?.length > 0);
+      },
+
+      async completionSend() {
+        const input = document.getElementById('completionInput');
+        const text = input?.value.trim();
+        if (!text) return;
+
+        input.value = '';
+        document.getElementById('completionSend')?.classList.remove('ready');
+
+        // Add user bubble
+        Stuck.history.push({ role: 'user', content: text });
+        const messages = document.getElementById('completionMessages');
+        const userBubble = document.createElement('div');
+        userBubble.className = 'stuck-bubble-wrap user';
+        userBubble.innerHTML = `<div class="stuck-bubble user">${text}</div>`;
+        messages.appendChild(userBubble);
+
+        // Typing dots
+        const typingEl = document.createElement('div');
+        typingEl.className = 'stuck-bubble-wrap assistant';
+        typingEl.id = 'completionTyping';
+        typingEl.innerHTML = `<div class="stuck-bubble assistant"><span class="inline-dots"><span></span><span></span><span></span></span></div>`;
+        messages.appendChild(typingEl);
+        messages.scrollTop = messages.scrollHeight;
+
+        try {
+          const ctx = `Product just completed: ${this.guide.name}. The user has just finished the build.`;
+          const reply = await callClaude(Stuck.history, SYSTEM_STUCK, 1000, ctx);
+          document.getElementById('completionTyping')?.remove();
+          Stuck.history.push({ role: 'assistant', content: reply });
+          const replyBubble = document.createElement('div');
+          replyBubble.className = 'stuck-bubble-wrap assistant';
+          replyBubble.innerHTML = `<div class="stuck-bubble assistant">${formatBody(reply)}</div>`;
+          messages.appendChild(replyBubble);
+          messages.scrollTop = messages.scrollHeight;
+          if (Voice.active) Voice.speak(reply);
+        } catch {
+          document.getElementById('completionTyping')?.remove();
+          const fallback = "Something went wrong — try again.";
+          Stuck.history.push({ role: 'assistant', content: fallback });
+          const fallbackBubble = document.createElement('div');
+          fallbackBubble.className = 'stuck-bubble-wrap assistant';
+          fallbackBubble.innerHTML = `<div class="stuck-bubble assistant">${formatBody(fallback)}</div>`;
+          messages.appendChild(fallbackBubble);
+          messages.scrollTop = messages.scrollHeight;
+        }
+
+        setTimeout(() => document.getElementById('completionInput')?.focus(), 80);
+      },
+
+      confirmYes() {
+        document.getElementById('guideTag').textContent = this.guide.category;
+        document.getElementById('guideItemName').textContent = this.guide.name;
+        document.getElementById('stuckBtn').classList.add('visible');
+        this.showScreen('screenGuide');
+        this.renderStep();
+      },
+
+      async confirmNo() {
+        // Hide the confirm card and buttons, show refinement area
+        document.getElementById('confirmCard').style.display = 'none';
+        document.getElementById('confirmActions').style.display = 'none';
+        document.getElementById('confirmHeading').textContent = 'Let\'s narrow it down.';
+        document.getElementById('confirmLabel').textContent = 'Almost there';
+        document.getElementById('confirmRefine').style.display = 'block';
+        document.getElementById('clarifySend').classList.remove('ready');
+
+        // Ask a targeted clarifying question based on what we already identified
+        const q = document.getElementById('clarifyQuestion');
+        q.textContent = '…';
+        try {
+          const question = await callClaude(
+            [{ role: 'user', content: `I identified: "${this.guide.name}" but the user said that's not right. Original search: "${this.userQuery}".` }],
+            SYSTEM_CLARIFY
+          );
+          q.textContent = question;
+          Voice.speak(question);
+        } catch {
+          q.textContent = 'Can you tell me a bit more — is it a different size or a different model?';
+        }
+        setTimeout(() => document.getElementById('clarifyInput')?.focus(), 100);
+      },
+
+      onClarifyType() {
+        const val = document.getElementById('clarifyInput').value.trim();
+        document.getElementById('clarifySend').classList.toggle('ready', val.length > 0);
+      },
+
+      async clarifySubmit() {
+        const input = document.getElementById('clarifyInput');
+        const answer = input.value.trim();
+        if (!answer) return;
+
+        input.disabled = true;
+        document.getElementById('clarifySend').classList.remove('ready');
+        document.getElementById('clarifyQuestion').innerHTML = 'Got it — looking that up <span class="inline-dots"><span></span><span></span><span></span></span>';
+
+        try {
+          const raw = await callClaude(
+            [{
+              role: 'user',
+              content: `Original search: "${this.userQuery}". I first identified it as "${this.guide.name}" but that was wrong. The user clarified: "${answer}". Please identify the correct product.`
+            }],
+            SYSTEM_REIDENTIFY,
+            8000
+          );
+          const start = raw.indexOf('{');
+          const end = raw.lastIndexOf('}');
+          if (start === -1 || end === -1) throw new Error('No JSON found in response');
+          const result = JSON.parse(raw.slice(start, end + 1));
+
+          if (result.identified) {
+            // Reset confirm screen and show new result
+            this.guide = result;
+            document.getElementById('confirmCard').style.display = 'block';
+            document.getElementById('confirmActions').style.display = 'flex';
+            document.getElementById('confirmRefine').style.display = 'none';
+            document.getElementById('confirmHeading').innerHTML = 'Is this what<br>you have?';
+            document.getElementById('confirmLabel').textContent = 'Just to confirm';
+            document.getElementById('confirmName').textContent = result.name;
+            document.getElementById('confirmDescription').textContent = result.description;
+            document.getElementById('clarifyInput').disabled = false;
+            document.getElementById('clarifyInput').value = '';
+          } else {
+            // Still can't identify — show a message in the refinement area, don't eject them
+            document.getElementById('clarifyQuestion').textContent = result.message || 'We\'re still not quite sure — can you add the model number or describe what the box looks like?';
+            input.disabled = false;
+            input.value = '';
+            document.getElementById('clarifySend').classList.remove('ready');
+          }
+        } catch (e) {
+          console.error('clarifySubmit failed:', e);
+          // Don't send them back to start — keep them on the confirm/refine screen
+          document.getElementById('clarifyQuestion').textContent = 'Something went wrong on our end — can you try describing it a little differently?';
+          input.disabled = false;
+          input.value = '';
+          document.getElementById('clarifySend').classList.remove('ready');
+        }
+      },
+
+      nextStep() {
+        this.currentStep++;
+        this.renderStep();
+      },
+
+      prevStep() {
+        if (this.currentStep > 0) {
+          this.currentStep--;
+          this.renderStep();
+        }
+      }
+    };
+
+    // Format body text — supports table, headers, bold, lists
+    function formatBody(text) {
+      if (!text) return '';
+
+      let lines = text.split('\n');
+      let result = [];
+      let inTable = false;
+      let tableRows = [];
+
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+
+        // Table detection
+        if (line.startsWith('|') && line.includes('|')) {
+          if (line.includes('---')) continue;
+          inTable = true;
+          let cells = line.split('|').slice(1, -1).map(c => c.trim());
+          tableRows.push(cells);
+          continue;
+        } else if (inTable) {
+          // Flush table
+          let tableHtml = '<div style="overflow-x:auto; margin:10px 0;"><table style="width:100%; border-collapse:collapse; font-size:11px; border:1px solid var(--border);">';
+          tableRows.forEach((row, idx) => {
+            tableHtml += '<tr>';
+            row.forEach(cell => {
+              let tag = idx === 0 ? 'th' : 'td';
+              tableHtml += `<${tag} style="padding:6px 8px; border:1px solid var(--border);">${cell}</${tag}>`;
+            });
+            tableHtml += '</tr>';
+          });
+          tableHtml += '</table></div>';
+          result.push(tableHtml);
+          inTable = false;
+          tableRows = [];
+        }
+
+        // Standard Markdown
+        if (line.startsWith('# ')) {
+          result.push(`<h1 style="font-family:Syne; font-size:20px; color:var(--text); margin:16px 0 8px;">${line.substring(2)}</h1>`);
+        } else if (line.startsWith('## ')) {
+          result.push(`<h2 style="font-family:Syne; font-size:17px; color:var(--text); margin:14px 0 6px;">${line.substring(3)}</h2>`);
+        } else if (line.startsWith('### ')) {
+          result.push(`<h3 style="font-family:Syne; font-size:15px; color:var(--text); margin:12px 0 4px;">${line.substring(4)}</h3>`);
+        } else if (line.startsWith('- ')) {
+          result.push(`<li style="margin-left:15px; margin-bottom:4px; color:var(--text-dim);">${line.substring(2)}</li>`);
+        } else if (line.length > 0) {
+          result.push(line);
+        }
+      }
+
+      // Cleanup remaining table
+      if (inTable) {
+        let tableHtml = '<div style="overflow-x:auto; margin:10px 0;"><table>';
+        tableRows.forEach((row, idx) => {
+          tableHtml += '<tr>';
+          row.forEach(cell => {
+            let tag = idx === 0 ? 'th' : 'td';
+            tableHtml += `<${tag}>${cell}</${tag}>`;
+          });
+          tableHtml += '</tr>';
+        });
+        tableHtml += '</table></div>';
+        result.push(tableHtml);
+      }
+
+      // Join and process inline styles
+      let html = result.map(item => {
+        if (item.startsWith('<')) return item;
+        return `<p style="margin-bottom:10px; color:var(--text-dim);">${item}</p>`;
+      }).join('');
+
+      return html
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>');
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // STUCK MODAL — conversation-based, holds full history
+    // ═══════════════════════════════════════════════════════════════
+    const Stuck = {
+      history: [], // Full conversation history passed to Claude each turn
+
+      open() {
+        // Don't reset history if reopening — conversation continues
+        this.render();
+        setTimeout(() => document.getElementById('stuckInput')?.focus(), 80);
+      },
+
+      close() {
+        document.getElementById('modalRoot').innerHTML = '';
+      },
+
+      reset() {
+        this.history = [];
+      },
+
+      currentContext() {
+        if (!App.guide) return 'The user is not currently on a specific build.';
+        const step = App.guide.steps[App.currentStep];
+        return `Product: ${App.guide.name}. Current step: "${step?.title || 'unknown'}".`;
+      },
+
+      render() {
+        const root = document.getElementById('modalRoot');
+        root.innerHTML = `
+      <div class="modal-overlay" onclick="if(event.target===this)Stuck.close()">
+        <div class="modal-sheet modal-sheet--chat">
+          <div class="modal-header-row">
+            <div class="modal-header">Hey Toolbox</div>
+            <button class="modal-close-btn" onclick="Stuck.close()">✕</button>
+          </div>
+          <div class="stuck-messages" id="stuckMessages"></div>
+          <div class="stuck-input-row">
+            <button class="stuck-back-btn" onclick="Stuck.close()">← back to build</button>
+            <div class="stuck-input-row-inner">
+              <textarea
+                class="stuck-input"
+                id="stuckInput"
+                rows="1"
+                placeholder="ask anything…"
+                oninput="Stuck.onType()"
+                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();Stuck.send();}"></textarea>
+              <button class="chat-send" id="stuckSend" onclick="Stuck.send()">↑</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+        // Render existing history if reopening mid-conversation
+        this.history.forEach(msg => {
+          if (msg.role === 'user') this.addBubble('user', msg.content);
+          else this.addBubble('assistant', msg.content);
+        });
+      },
+
+      onType() {
+        const val = document.getElementById('stuckInput')?.value.trim();
+        document.getElementById('stuckSend')?.classList.toggle('ready', val?.length > 0);
+      },
+
+      async send() {
+        const input = document.getElementById('stuckInput');
+        const text = input?.value.trim();
+        if (!text) return;
+
+        input.value = '';
+        document.getElementById('stuckSend')?.classList.remove('ready');
+
+        // Add to history and render
+        this.history.push({ role: 'user', content: text });
+        this.addBubble('user', text);
+        this.showTyping();
+
+        try {
+          const ctx = this.currentContext();
+          const reply = await callClaude(this.history, SYSTEM_STUCK, 1000, ctx);
+          this.hideTyping();
+          this.history.push({ role: 'assistant', content: reply });
+          this.addBubble('assistant', reply);
+          if (Voice.active) Voice.speak(reply);
+        } catch {
+          this.hideTyping();
+          const fallback = "Something went wrong on my end — try asking again.";
+          this.history.push({ role: 'assistant', content: fallback });
+          this.addBubble('assistant', fallback);
+        }
+
+        setTimeout(() => document.getElementById('stuckInput')?.focus(), 80);
+      },
+
+      addBubble(role, text) {
+        const messages = document.getElementById('stuckMessages');
+        if (!messages) return;
+        const wrap = document.createElement('div');
+        wrap.className = `stuck-bubble-wrap ${role}`;
+        const content = role === 'assistant' ? formatBody(text) : text;
+        wrap.innerHTML = `<div class="stuck-bubble ${role}">${content}</div>`;
+        messages.appendChild(wrap);
+        messages.scrollTop = messages.scrollHeight;
+      },
+
+      showTyping() {
+        const messages = document.getElementById('stuckMessages');
+        if (!messages) return;
+        const el = document.createElement('div');
+        el.className = 'stuck-bubble-wrap assistant';
+        el.id = 'stuckTyping';
+        el.innerHTML = `<div class="stuck-bubble assistant"><span class="inline-dots"><span></span><span></span><span></span></span></div>`;
+        messages.appendChild(el);
+        messages.scrollTop = messages.scrollHeight;
+      },
+
+      hideTyping() {
+        document.getElementById('stuckTyping')?.remove();
+      }
+    };
+
+    // ═══════════════════════════════════════════════════════════════
+    // INIT
+    // ═══════════════════════════════════════════════════════════════
+    App.showScreen('screenAuth');
+    App.checkPersistedAuth();
+    setTimeout(() => document.getElementById('authPassword').focus(), 100);
+  </script>
+</body>
+
+</html>
