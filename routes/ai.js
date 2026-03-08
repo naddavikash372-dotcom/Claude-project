@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.post('/', async (req, res) => {
     try {
-        const { messages, systemPrompt, maxTokens, productName } = req.body;
+        const { messages, systemPrompt, systemPromptKey, context, maxTokens, productName } = req.body;
 
         // 1. Check Cache (if productName is provided)
         if (productName) {
@@ -21,6 +21,8 @@ router.post('/', async (req, res) => {
         const result = await callAnthropic({
             messages,
             systemPrompt,
+            systemPromptKey,
+            context,
             maxTokens: maxTokens || 4000
         });
 
