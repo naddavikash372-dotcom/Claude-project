@@ -13,6 +13,12 @@ const port = process.env.PORT || 8080;
 app.use(cors());
 app.use(express.json());
 app.use(express.static('.'));
+const path = require('path');
+
+// Serve the main application
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'quiet-toolbox-dev.html'));
+});
 
 
 // TOTAL PUBLIC DEBUG ENDPOINT (No password needed)
