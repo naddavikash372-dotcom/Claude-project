@@ -1,12 +1,21 @@
 const Prompts = require('./prompts');
 
-async function callAnthropic({ messages, systemPrompt, systemPromptKey, maxTokens = 4000 }) {
+async function callAnthropic({ messages, systemPrompt, systemPromptKey, context, maxTokens = 4000 }) {
     const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set.');
+    if (!apiKey) {
+        console.error('CRITICAL: ANTHROPIC_API_KEY is missing in process.env');
+        throw new Error('ANTHROPIC_API_KEY is not set.');
+    }
 
     // Use the key if provided, otherwise fallback to raw prompt
     let finalSystemPrompt = systemPromptKey ? Prompts[systemPromptKey] : systemPrompt;
 
+    // Append context if provided
+    if (context) {
+        finalSystemPrompt = (finalSystemPrompt || '') + `\n\nContext: ${context}`;
+    }
+
+    console.log(`Calling Anthropic with model: claude-3-5-sonnet-20241022`);
     const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
